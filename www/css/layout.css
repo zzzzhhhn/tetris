@@ -1,0 +1,82 @@
+body {
+  text-align: center;
+  width: 100%;
+  min-width: 1520px;
+}
+body .title h1 {
+  margin-bottom: 0;
+}
+body .title h2 {
+  margin-top: 0;
+}
+body .game {
+  width: 980px;
+  height: auto;
+  margin: auto;
+}
+body .game:after {
+  content: '';
+  display: block;
+  clear: left;
+}
+body .game * {
+  box-sizing: border-box;
+}
+body .game .contain {
+  width: 440px;
+  height: 680px;
+  float: left;
+  background: lightblue;
+}
+body .game .contain:first-child {
+  margin-right: 100px;
+}
+body .game .contain .name {
+  width: 100%;
+  text-align: center;
+  height: 80px;
+  line-height: 50px;
+  font-size: 20px;
+  background: lightcyan;
+}
+body .game .contain .panel-msg {
+  width: 140px;
+  height: 600px;
+  float: left;
+  background: lightgoldenrodyellow;
+}
+body .game .contain .panel-msg .next {
+  width: 120px;
+  height: 120px;
+  margin: 10px;
+  background: lightcoral;
+  position: relative;
+}
+body .game .contain .panel-msg .msg {
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+}
+body .game .contain .panel-game {
+  width: 300px;
+  height: 600px;
+  float: left;
+  background: aliceblue;
+  position: relative;
+}
+body .game .contain .square {
+  width: 30px;
+  height: 30px;
+  border: 1px solid currentColor;
+  background: currentColor;
+  position: absolute;
+}
+body .game .contain .square.none {
+  color: transparent;
+}
+body .game .contain .square.current {
+  color: lightpink;
+}
+body .game .contain .square.done {
+  color: darkgray;
+}

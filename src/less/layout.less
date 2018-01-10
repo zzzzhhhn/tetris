@@ -1,0 +1,101 @@
+@fs1: 20px ;
+@qs: 30px; //方块大小
+
+body {
+  text-align: center;
+  width: 100%;
+  min-width: 1520px;
+
+  .title {
+    h1 {
+      margin-bottom: 0;
+    }
+    h2 {
+      margin-top: 0;
+    }
+  }
+
+  .game {
+    width: 980px;
+    height: auto;
+    margin: auto;
+
+    &:after {
+      content: '';
+      display: block;
+      clear: left;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    .contain {
+      width: 440px;
+      height: 680px;
+      float: left;
+      background: lightblue;
+
+      &:first-child {
+        margin-right: 100px;
+      }
+
+      .name {
+        width: 100%;
+        text-align: center;
+        height: 80px;
+        line-height: 50px;
+        font-size: @fs1;
+        background: lightcyan;
+      }
+
+      .panel-msg {
+        width: 140px;
+        height: 600px;
+        float: left;
+        background: lightgoldenrodyellow;
+
+        .next {
+          width: 120px;
+          height: 120px;
+          margin: 10px;
+          background: lightcoral;
+          position: relative;
+        }
+
+        .msg {
+          width: 100%;
+          text-align: center;
+          font-size: @fs1;
+        }
+      }
+
+      .panel-game {
+        width: 300px;
+        height: 600px;
+        float: left;
+        background: aliceblue;
+        position: relative;
+      }
+
+      .square {
+        width: 30px;
+        height: 30px;
+        border: 1px solid currentColor;
+        background: currentColor;
+        position: absolute;
+
+        &.none {
+          color: transparent;
+        }
+
+        &.current {
+          color: lightpink;
+        }
+
+        &.done {
+          color: darkgray;
+        }
+      }
+    }
+  }
+}

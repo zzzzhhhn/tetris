@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="./css/layout.css">
+</head>
+<body>
+    <!--标题-->
+    <div class="title">
+        <h1>火拼俄罗斯方块</h1><br>
+        <h2>游戏时间：</h2><h2 id="time"></h2>
+    </div>
+    <!--游戏区-->
+    <div class="game">
+        <!--我的游戏区-->
+        <div class="contain">
+            <div class="name" id="name-local">我的游戏</div>
+            <!--信息区-->
+            <div class="panel-msg">
+                <div class="next" id="next-local"></div>
+                <div class="msg">
+                    <span class="score-label">得分：</span>
+                    <span class="score-value" id="score-local"></span>
+                </div>
+            </div>
+            <!--游戏区-->
+            <div class="panel-game" id="panel-local"></div>
+        </div>
+
+        <!--对手游戏区-->
+        <div class="contain">
+            <div class="name" id="name-remote">等待对手</div>
+            <!--信息区-->
+            <div class="panel-msg">
+                <div class="next" id="next-remote"></div>
+                <div class="msg">
+                    <span class="score-label">得分：</span>
+                    <span class="score-value" id="score-remote"></span>
+                </div>
+            </div>
+            <!--游戏区-->
+            <div class="panel-game" id="panel-remote"></div>
+        </div>
+    </div>
+
+
+
+
+
+<script defer src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script defer src="./js/main.js"></script>
+</body>
+</html>
