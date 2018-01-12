@@ -1,3 +1,4 @@
 .idea/
 .wing/
 node_modules
+yarn-error.log

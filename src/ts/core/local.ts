@@ -1,12 +1,19 @@
 import Game from '../ui/game';
+// const io = require('socket.io-client');
+import Socket = SocketIOClient.Socket;
 
 export default class Local {
+
     private _game: Game;
+    private _socket: Socket;
+
     constructor() {
         this._game = new Game('local');
         this._game.init();
         this._game.loop();
         this.bindEvent();
+        this._socket = io('http://localhost:3000');
+
 
     }
 
@@ -50,8 +57,9 @@ export default class Local {
     bindStart(id: string): void {
         $('#' + id).on('click',() => {
             $('#' + id).addClass('disabled');
+            $('#' + id).text('等待对手确认...');
             //TODO 点击准备按钮发送准备
-            this._game.start = true;
+            this._socket.emit('start',{});
         });
     };
 }

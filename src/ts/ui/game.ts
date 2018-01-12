@@ -55,60 +55,68 @@ export class Game {
     /**
      * 刷新主体
      */
-    public refreshGame() {
-        let status = 1;
-        let left = 3;         //方块最左侧位置
-        let right = 0;        //方块最右侧位置
-        this._currentSquare.leftWall = false;
-        this._currentSquare.rightWall = false;
+    public refreshGame(gameMatrix: number[][] = Toolkit.matrix.makeMatrix(0,10,20), nextMatrix: number[][] = Toolkit.matrix.makeMatrix(1,4,4)) {
+        if(this._user === 'local') {
+            let status = 1;
+            let left = 3;         //方块最左侧位置
+            let right = 0;        //方块最右侧位置
+            this._currentSquare.leftWall = false;
+            this._currentSquare.rightWall = false;
 
-        //重置面板
-        this._gameMatrix.forEach((rV, rI) =>
-            rV.forEach((cV, cI) => {
-                if(cV === 1) {
-                    this._gameMatrix[rI][cI] = 0;
-                }
-            })
-        );
+            //重置面板
+            this._gameMatrix.forEach((rV, rI) =>
+                rV.forEach((cV, cI) => {
+                    if (cV === 1) {
+                        this._gameMatrix[rI][cI] = 0;
+                    }
+                })
+            );
 
-        if(!this.checkDown()) {
-            status = 2;
-        }
-        //渲染方块所在位置
-        this._currentSquare.matrix.forEach((rV, rI) => {
-            rV.forEach((cV, cI) => {
-                if(cV) {
-                    if(this._gameMatrix[this._currentSquare.y + rI]) {
-                        this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI] = status;
-                    }
-                    right = cI > right ? cI : right;
-                    left = cI < left ? cI : left;
-                    //监测是否出界
-                    if((this._gameMatrix[this._currentSquare.y + rI] &&
-                            this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI - 1] &&
-                            this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI - 1] === 2) ||
-                        this._currentSquare.x + left <= 0
-                    ) {
-                        this._currentSquare.leftWall = true;
-                    }
-                    if((this._gameMatrix[this._currentSquare.y + rI] &&
-                            this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI + 1] &&
-                            this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI + 1] === 2) ||
+            if (!this.checkDown()) {
+                status = 2;
+            }
+            //渲染方块所在位置
+            this._currentSquare.matrix.forEach((rV, rI) => {
+                rV.forEach((cV, cI) => {
+                    if (cV) {
+                        if (this._gameMatrix[this._currentSquare.y + rI]) {
+                            this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI] = status;
+                        }
+                        right = cI > right ? cI : right;
+                        left = cI < left ? cI : left;
+                        //监测是否出界
+                        if ((this._gameMatrix[this._currentSquare.y + rI] &&
+                                this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI - 1] &&
+                                this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI - 1] === 2) ||
+                            this._currentSquare.x + left <= 0
+                        ) {
+                            this._currentSquare.leftWall = true;
+                        }
+                        if ((this._gameMatrix[this._currentSquare.y + rI] &&
+                                this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI + 1] &&
+                                this._gameMatrix[this._currentSquare.y + rI][this._currentSquare.x + cI + 1] === 2) ||
                             this._currentSquare.x + right >= 9
-                    ) {
-                        this._currentSquare.rightWall = true;
+                        ) {
+                            this._currentSquare.rightWall = true;
+                        }
                     }
-                }
-            })
-        });
+                })
+            });
 
 
-        this.checkClear();
-        this.refresh(1);
+            this.checkClear();
+            this.refresh(1);
 
-        if(status === 2) {
-            this._currentSquare.done();
-            this.refreshNext(this._currentSquare.nextMatrix);
+            if (status === 2) {
+                this._currentSquare.done();
+                this.refreshNext(this._currentSquare.nextMatrix);
+            }
+        }
+        else {
+            this._gameMatrix = gameMatrix;
+            this.refresh(1);
+            this._nextMatrix = nextMatrix;
+            this.refresh(2);
         }
     }
 

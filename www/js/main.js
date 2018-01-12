@@ -117,46 +117,56 @@ var Game = function () {
         value: function refreshGame() {
             var _this = this;
 
-            var status = 1;
-            var left = 3; //方块最左侧位置
-            var right = 0; //方块最右侧位置
-            this._currentSquare.leftWall = false;
-            this._currentSquare.rightWall = false;
-            //重置面板
-            this._gameMatrix.forEach(function (rV, rI) {
-                return rV.forEach(function (cV, cI) {
-                    if (cV === 1) {
-                        _this._gameMatrix[rI][cI] = 0;
-                    }
+            var gameMatrix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : toolkit_1.default.matrix.makeMatrix(0, 10, 20);
+            var nextMatrix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : toolkit_1.default.matrix.makeMatrix(1, 4, 4);
+
+            if (this._user === 'local') {
+                var status = 1;
+                var left = 3; //方块最左侧位置
+                var right = 0; //方块最右侧位置
+                this._currentSquare.leftWall = false;
+                this._currentSquare.rightWall = false;
+                //重置面板
+                this._gameMatrix.forEach(function (rV, rI) {
+                    return rV.forEach(function (cV, cI) {
+                        if (cV === 1) {
+                            _this._gameMatrix[rI][cI] = 0;
+                        }
+                    });
                 });
-            });
-            if (!this.checkDown()) {
-                status = 2;
-            }
-            //渲染方块所在位置
-            this._currentSquare.matrix.forEach(function (rV, rI) {
-                rV.forEach(function (cV, cI) {
-                    if (cV) {
-                        if (_this._gameMatrix[_this._currentSquare.y + rI]) {
-                            _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI] = status;
+                if (!this.checkDown()) {
+                    status = 2;
+                }
+                //渲染方块所在位置
+                this._currentSquare.matrix.forEach(function (rV, rI) {
+                    rV.forEach(function (cV, cI) {
+                        if (cV) {
+                            if (_this._gameMatrix[_this._currentSquare.y + rI]) {
+                                _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI] = status;
+                            }
+                            right = cI > right ? cI : right;
+                            left = cI < left ? cI : left;
+                            //监测是否出界
+                            if (_this._gameMatrix[_this._currentSquare.y + rI] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI - 1] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI - 1] === 2 || _this._currentSquare.x + left <= 0) {
+                                _this._currentSquare.leftWall = true;
+                            }
+                            if (_this._gameMatrix[_this._currentSquare.y + rI] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI + 1] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI + 1] === 2 || _this._currentSquare.x + right >= 9) {
+                                _this._currentSquare.rightWall = true;
+                            }
                         }
-                        right = cI > right ? cI : right;
-                        left = cI < left ? cI : left;
-                        //监测是否出界
-                        if (_this._gameMatrix[_this._currentSquare.y + rI] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI - 1] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI - 1] === 2 || _this._currentSquare.x + left <= 0) {
-                            _this._currentSquare.leftWall = true;
-                        }
-                        if (_this._gameMatrix[_this._currentSquare.y + rI] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI + 1] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI + 1] === 2 || _this._currentSquare.x + right >= 9) {
-                            _this._currentSquare.rightWall = true;
-                        }
-                    }
+                    });
                 });
-            });
-            this.checkClear();
-            this.refresh(1);
-            if (status === 2) {
-                this._currentSquare.done();
-                this.refreshNext(this._currentSquare.nextMatrix);
+                this.checkClear();
+                this.refresh(1);
+                if (status === 2) {
+                    this._currentSquare.done();
+                    this.refreshNext(this._currentSquare.nextMatrix);
+                }
+            } else {
+                this._gameMatrix = gameMatrix;
+                this.refresh(1);
+                this._nextMatrix = nextMatrix;
+                this.refresh(2);
             }
         }
         /**
@@ -517,6 +527,7 @@ var Local = function () {
         this._game.init();
         this._game.loop();
         this.bindEvent();
+        this._socket = io('http://localhost:3000');
     }
 
     _createClass(Local, [{
@@ -561,8 +572,9 @@ var Local = function () {
 
             $('#' + id).on('click', function () {
                 $('#' + id).addClass('disabled');
+                $('#' + id).text('等待对手确认...');
                 //TODO 点击准备按钮发送准备
-                _this2._game.start = true;
+                _this2._socket.emit('start', {});
             });
         }
     }, {
@@ -860,19 +872,33 @@ exports.default = Square;
 "use strict";
 
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var game_1 = __webpack_require__(0);
 
-var Local = function Local() {
-    _classCallCheck(this, Local);
+var Remote = function () {
+    function Remote() {
+        _classCallCheck(this, Remote);
 
-    var game = new game_1.default('remote');
-    game.init();
-};
+        this._game = new game_1.default('remote');
+        this._game.init();
+        this._game.refreshGame();
+    }
 
-exports.default = Local;
+    _createClass(Remote, [{
+        key: "game",
+        get: function get() {
+            return this._game;
+        }
+    }]);
+
+    return Remote;
+}();
+
+exports.default = Remote;
 
 /***/ })
 /******/ ]);

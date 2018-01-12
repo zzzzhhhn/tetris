@@ -1,8 +1,16 @@
 import Game from '../ui/game';
 
-export default class Local {
+export default class Remote {
+
+    private _game: Game;
+
     constructor() {
-        const game = new Game('remote');
-        game.init();
+        this._game = new Game('remote');
+        this._game.init();
+        this._game.refreshGame();
+    }
+
+    get game() {
+        return this._game;
     }
 }
