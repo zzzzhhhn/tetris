@@ -100,6 +100,8 @@ var Game = function () {
             this._score = 0;
             this._start = false;
             this._gameOver = false;
+            this._win = false;
+            this._lose = false;
             $('#score-' + this._user).text(this._score);
             this._gameMatrix = toolkit_1.default.matrix.makeMatrix(0, 10, 20);
             this._nextMatrix = toolkit_1.default.matrix.makeMatrix(1, 4, 4);
@@ -305,14 +307,12 @@ var Game = function () {
                     break;
             }
             if (this._score >= 2000) {
-                this._gameOver = true;
-                this.win();
+                this.onWin();
             }
             //TODO 给对方加速
             //判断游戏结束
-            if (done_count >= 20) {
-                this._gameOver = true;
-                this.lose();
+            if (done_count >= 19) {
+                this.onLose();
             }
             $('#score-' + this._user).text(this._score);
         }
@@ -321,18 +321,22 @@ var Game = function () {
          */
 
     }, {
-        key: "lose",
-        value: function lose() {
+        key: "onLose",
+        value: function onLose() {
             $("#lose").show();
+            this._lose = true;
+            this._gameOver = true;
         }
         /**
          * 胜利
          */
 
     }, {
-        key: "win",
-        value: function win() {
+        key: "onWin",
+        value: function onWin() {
             $("#win").show();
+            this._win = true;
+            this._gameOver = true;
         }
         /**
          * 干扰
@@ -373,11 +377,34 @@ var Game = function () {
         key: "gameover",
         get: function get() {
             return this._gameOver;
+        },
+        set: function set(bool) {
+            this._gameOver = bool;
         }
     }, {
         key: "start",
         set: function set(bool) {
             this._start = bool;
+        }
+    }, {
+        key: "win",
+        get: function get() {
+            return this._win;
+        }
+    }, {
+        key: "lose",
+        get: function get() {
+            return this._lose;
+        }
+    }, {
+        key: "gameMatrix",
+        get: function get() {
+            return this._gameMatrix;
+        }
+    }, {
+        key: "nextMatrix",
+        get: function get() {
+            return this._nextMatrix;
         }
     }]);
 
@@ -496,14 +523,24 @@ var local = new local_1.default();
 var remote = new remote_1.default();
 var time = 0;
 setInterval(function () {
-    time++;
+    time += 0.1;
     $('#m').text(Math.floor(time / 60) < 10 ? '0' + Math.floor(time / 60) : Math.floor(time / 60));
-    $('#s').text(time % 60 < 10 ? '0' + time % 60 : time % 60);
+    $('#s').text(time % 60 < 10 ? '0' + Math.floor(time % 60) : Math.floor(time % 60));
     // if(time % 3 === 0) {
     //     local.game.disturb();
     // }
+    if (local.game.lose) {
+        local.socket.emit('lose');
+    }
+    if (local.game.win) {
+        local.socket.emit('win');
+    }
+    local.socket.emit('playing', { game: local.game.gameMatrix, next: local.game.nextMatrix });
+    local.socket.on('playing', function (data) {
+        remote.game.refreshGame(data.game, data.next);
+    });
 }, 1000);
-$('#prepare').show();
+$('#panel-name').show();
 
 /***/ }),
 /* 3 */
@@ -521,6 +558,8 @@ var game_1 = __webpack_require__(0);
 
 var Local = function () {
     function Local() {
+        var _this = this;
+
         _classCallCheck(this, Local);
 
         this._game = new game_1.default('local');
@@ -528,6 +567,20 @@ var Local = function () {
         this._game.loop();
         this.bindEvent();
         this._socket = io('http://localhost:3000');
+        this._socket.on('start', function (data) {
+            $('#prepare').hide();
+            $('#win').hide();
+            $('#lose').hide();
+            $('#name-remote').text(data.remoteName);
+            _this._game.start = true;
+            _this._game.gameover = false;
+        });
+        this._socket.on('win', function () {
+            _this._game.onWin();
+        });
+        this._socket.on('lose', function () {
+            _this._game.onLose();
+        });
     }
 
     _createClass(Local, [{
@@ -537,28 +590,37 @@ var Local = function () {
          * 绑定键盘事件
          */
         value: function bindEvent() {
-            var _this = this;
+            var _this2 = this;
 
             $(document).on('keydown', function (e) {
-                if (_this._game.gameover) {
+                if (_this2._game.gameover) {
                     return;
                 }
                 if (e.keyCode === 38) {
-                    _this._game.currentSquare.turn(_this._game);
+                    _this2._game.currentSquare.turn(_this2._game);
                 } else if (e.keyCode === 37) {
-                    _this._game.currentSquare.left();
+                    _this2._game.currentSquare.left();
                 } else if (e.keyCode === 39) {
-                    _this._game.currentSquare.right();
+                    _this2._game.currentSquare.right();
                 } else if (e.keyCode === 40) {
-                    _this._game.currentSquare.down();
+                    _this2._game.currentSquare.down();
                 } else if (e.keyCode === 32) {
-                    _this._game.currentSquare.drop(_this._game);
+                    _this2._game.currentSquare.drop(_this2._game);
                 }
-                _this._game.refreshGame();
+                _this2._game.refreshGame();
             });
             this.bindStart('start');
             this.bindStart('win-again');
             this.bindStart('lose-again');
+            $('#btn-name').on('click', function () {
+                var name = $('#ipt-name').val();
+                if (!!name) {
+                    $('#name-local').text(name);
+                }
+                _this2._socket.emit('nickname', { name: name });
+                $('#panel-name').hide();
+                $('#prepare').show();
+            });
         }
         /**
          * 绑定开始游戏事件工具
@@ -568,19 +630,24 @@ var Local = function () {
     }, {
         key: "bindStart",
         value: function bindStart(id) {
-            var _this2 = this;
+            var _this3 = this;
 
             $('#' + id).on('click', function () {
                 $('#' + id).addClass('disabled');
                 $('#' + id).text('等待对手确认...');
                 //TODO 点击准备按钮发送准备
-                _this2._socket.emit('start', {});
+                _this3._socket.emit('start', {});
             });
         }
     }, {
         key: "game",
         get: function get() {
             return this._game;
+        }
+    }, {
+        key: "socket",
+        get: function get() {
+            return this._socket;
         }
     }]);
 
@@ -885,7 +952,6 @@ var Remote = function () {
 
         this._game = new game_1.default('remote');
         this._game.init();
-        this._game.refreshGame();
     }
 
     _createClass(Remote, [{

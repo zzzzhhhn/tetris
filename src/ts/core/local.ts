@@ -1,6 +1,8 @@
 import Game from '../ui/game';
-// const io = require('socket.io-client');
 import Socket = SocketIOClient.Socket;
+interface start {
+    remoteName: string,
+}
 
 export default class Local {
 
@@ -13,12 +15,32 @@ export default class Local {
         this._game.loop();
         this.bindEvent();
         this._socket = io('http://localhost:3000');
+        this._socket.on('start', (data: start) => {
+            $('#prepare').hide();
+            $('#win').hide();
+            $('#lose').hide();
+            $('#name-remote').text(data.remoteName);
+            this._game.start = true;
+            this._game.gameover = false;
+        });
+
+        this._socket.on('win', () => {
+           this._game.onWin();
+        });
+
+        this._socket.on('lose', () => {
+            this._game.onLose();
+        });
 
 
     }
 
     get game() {
         return this._game;
+    }
+
+    get socket() {
+        return this._socket;
     }
 
     /**
@@ -47,7 +69,15 @@ export default class Local {
         this.bindStart('win-again');
         this.bindStart('lose-again');
 
-
+        $('#btn-name').on('click', () => {
+           const name = $('#ipt-name').val();
+           if(!!name) {
+               $('#name-local').text(<string>name);
+           }
+           this._socket.emit('nickname',{name: name});
+           $('#panel-name').hide();
+           $('#prepare').show();
+        });
     }
 
     /**

@@ -17,6 +17,8 @@ export class Game {
     private _score: number;   //游戏分数
     private _gameOver: boolean;   //是否游戏结束
     private _start: boolean;     //游戏是否开始
+    private _win: boolean;
+    private _lose: boolean;
 
     constructor(user: string) {
         this._user = user;
@@ -31,8 +33,28 @@ export class Game {
         return this._gameOver;
     }
 
+    set gameover(bool: boolean) {
+        this._gameOver = bool;
+    }
+
     set start(bool: boolean) {
         this._start = bool;
+    }
+
+    get win() {
+        return this._win;
+    }
+
+    get lose() {
+        return this._lose;
+    }
+
+    get gameMatrix() {
+        return this._gameMatrix;
+    }
+
+    get nextMatrix() {
+        return this._nextMatrix;
     }
 
     /**
@@ -42,6 +64,8 @@ export class Game {
         this._score = 0;
         this._start = false;
         this._gameOver = false;
+        this._win = false;
+        this._lose = false;
         $('#score-' + this._user).text(this._score);
         this._gameMatrix = Toolkit.matrix.makeMatrix(0,10,20);
         this._nextMatrix = Toolkit.matrix.makeMatrix(1,4,4);
@@ -243,15 +267,13 @@ export class Game {
         }
 
         if(this._score >= 2000) {
-            this._gameOver = true;
-            this.win();
+            this.onWin();
         }
         //TODO 给对方加速
 
         //判断游戏结束
-        if(done_count >= 20) {
-            this._gameOver = true;
-            this.lose();
+        if(done_count >= 19) {
+            this.onLose();
         }
         $('#score-' + this._user).text(this._score);
     }
@@ -259,15 +281,19 @@ export class Game {
     /**
      * 失败
      */
-    lose() {
+    onLose() {
         $("#lose").show();
+        this._lose = true;
+        this._gameOver = true;
     }
 
     /**
      * 胜利
      */
-    win() {
+    onWin() {
         $("#win").show();
+        this._win = true;
+        this._gameOver = true;
     }
 
     /**
