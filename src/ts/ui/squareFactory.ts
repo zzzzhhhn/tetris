@@ -38,7 +38,6 @@ export class SquareFactory {
      * 刷新方块
      */
     refresh(matrix: number[][]) {
-        console.log(matrix);
         matrix.forEach((row, rowIndex) => {
             row.forEach((col, colIndex) => {
                 const div = this._contain.find(`div:nth-child(${ rowIndex + 1 })`).find(`div:nth-child(${ colIndex + 1 })`);

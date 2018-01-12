@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 1);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -75,11 +75,11 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var squareFactory_1 = __webpack_require__(3);
-var toolkit_1 = __webpack_require__(4);
+var squareFactory_1 = __webpack_require__(4);
+var toolkit_1 = __webpack_require__(1);
 var square_1 = __webpack_require__(5);
 /**
- * 生成游戏面板
+ * 生成游戏解决方案
  */
 
 var Game = function () {
@@ -87,20 +87,24 @@ var Game = function () {
         _classCallCheck(this, Game);
 
         this._user = user;
-        this._speed = 3000;
+        this._speed = 5000;
     }
-    /**
-     * 初始化游戏
-     */
-
 
     _createClass(Game, [{
         key: "init",
+
+        /**
+         * 初始化游戏
+         */
         value: function init() {
+            this._score = 0;
+            $('#score-' + this._user).text(this._score);
             this._gameMatrix = toolkit_1.default.matrix.makeMatrix(0, 10, 20);
             this._nextMatrix = toolkit_1.default.matrix.makeMatrix(1, 4, 4);
-            this._currentSquare = new square_1.default(this._nextMatrix);
+            this._currentSquare = new square_1.default();
+            this._nextMatrix = this._currentSquare.nextMatrix;
             this.build();
+            this.refreshGame();
         }
         /**
          * 刷新主体
@@ -111,13 +115,47 @@ var Game = function () {
         value: function refreshGame() {
             var _this = this;
 
-            this._gameMatrix = toolkit_1.default.matrix.makeMatrix(0, 10, 20);
-            this._currentSquare.matrix.forEach(function (rV, rI) {
-                rV.forEach(function (cV, cI) {
-                    _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI] = cV;
+            var status = 1;
+            var left = 3; //方块最左侧位置
+            var right = 0; //方块最右侧位置
+            this._currentSquare.leftWall = false;
+            this._currentSquare.rightWall = false;
+            //重置面板
+            this._gameMatrix.forEach(function (rV, rI) {
+                return rV.forEach(function (cV, cI) {
+                    if (cV === 1) {
+                        _this._gameMatrix[rI][cI] = 0;
+                    }
                 });
             });
+            if (!this.checkDown()) {
+                status = 2;
+            }
+            //渲染方块所在位置
+            this._currentSquare.matrix.forEach(function (rV, rI) {
+                rV.forEach(function (cV, cI) {
+                    if (cV) {
+                        if (_this._gameMatrix[_this._currentSquare.y + rI]) {
+                            _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI] = status;
+                        }
+                        right = cI > right ? cI : right;
+                        left = cI < left ? cI : left;
+                        //监测是否出界
+                        if (_this._gameMatrix[_this._currentSquare.y + rI] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI - 1] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI - 1] === 2 || _this._currentSquare.x + left <= 0) {
+                            _this._currentSquare.leftWall = true;
+                        }
+                        if (_this._gameMatrix[_this._currentSquare.y + rI] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI + 1] && _this._gameMatrix[_this._currentSquare.y + rI][_this._currentSquare.x + cI + 1] === 2 || _this._currentSquare.x + right >= 9) {
+                            _this._currentSquare.rightWall = true;
+                        }
+                    }
+                });
+            });
+            this.checkClear();
             this.refresh(1);
+            if (status === 2) {
+                this._currentSquare.done();
+                this.refreshNext(this._currentSquare.nextMatrix);
+            }
         }
         /**
          * 刷新预览
@@ -142,6 +180,11 @@ var Game = function () {
             this._nextSquare = new squareFactory_1.default(this._nextMatrix, $('#next-' + this._user));
             this._nextSquare.build();
         }
+        /**
+         * 刷新dom
+         * @param {number} val
+         */
+
     }, {
         key: "refresh",
         value: function refresh(val) {
@@ -152,18 +195,124 @@ var Game = function () {
             }
         }
         /**
+         * 检测是否可以下降
+         * @returns {boolean}
+         */
+
+    }, {
+        key: "checkDown",
+        value: function checkDown() {
+            var _this2 = this;
+
+            //判断下一行是否到底或者有方块
+            var result = true;
+            this._currentSquare.matrix.forEach(function (rV, rI) {
+                rV.forEach(function (cV, cI) {
+                    if (!!cV) {
+                        var next = _this2._gameMatrix[_this2._currentSquare.y + rI + 1] ? _this2._gameMatrix[_this2._currentSquare.y + rI + 1][_this2._currentSquare.x + cI] : -1;
+                        if (next === 2 || next === -1) {
+                            result = false;
+                        }
+                    }
+                });
+            });
+            return result;
+        }
+        /**
+         * 检测是否可以旋转
+         * @returns {boolean}
+         */
+
+    }, {
+        key: "checkTurn",
+        value: function checkTurn() {
+            var _this3 = this;
+
+            var matrix = toolkit_1.default.matrix.turnMatrix(this._currentSquare.matrixObj);
+            var left = 3; //方块最左侧位置
+            var right = 0; //方块最右侧位置
+            var has_done = false; //旁边是否有done
+            matrix.matrix.forEach(function (rV, rI) {
+                rV.forEach(function (cV, cI) {
+                    if (cV) {
+                        right = cI > right ? cI : right;
+                        left = cI < left ? cI : left;
+                    }
+                    if (_this3._gameMatrix[_this3._currentSquare.y + rI] && _this3._gameMatrix[_this3._currentSquare.y + rI][_this3._currentSquare.x + cI] && _this3._gameMatrix[_this3._currentSquare.y + rI][_this3._currentSquare.x + cI] === 2) {
+                        has_done = true;
+                    }
+                });
+            });
+            //根据是否可以旋转返回矩阵
+            if (this._currentSquare.x + left <= 0 || this._currentSquare.x + right >= 9 || has_done) {
+                return this._currentSquare.matrixObj;
+            } else {
+                return matrix;
+            }
+        }
+        /**
+         *  检测消除
+         */
+
+    }, {
+        key: "checkClear",
+        value: function checkClear() {
+            var _this4 = this;
+
+            var score_count = 0;
+            var done_count = 0;
+            this._gameMatrix.forEach(function (rV, rI) {
+                var count = 0;
+                rV.forEach(function (cV, cI) {
+                    if (cV === 2) {
+                        count++;
+                    }
+                });
+                if (count === 10) {
+                    score_count++;
+                    _this4._gameMatrix.splice(rI, 1);
+                    _this4._gameMatrix.unshift(toolkit_1.default.matrix.makeRow(0, 10));
+                }
+                if (count >= 1) {
+                    done_count++;
+                }
+            });
+            if (score_count === 4) {
+                this._score += 80;
+            } else {
+                this._score += 10 * score_count;
+            }
+            if (done_count >= 20) {
+                this._gameOver = true;
+                alert('game over');
+            }
+            $('#score-' + this._user).text(this._score);
+        }
+        /**
          * 循环游戏
          */
 
     }, {
         key: "loop",
         value: function loop() {
-            var _this2 = this;
+            var _this5 = this;
 
             setInterval(function () {
-                _this2._currentSquare.down();
-                _this2.refreshGame();
+                if (!_this5._gameOver) {
+                    _this5.refreshGame();
+                    _this5._currentSquare.down();
+                }
             }, this._speed);
+        }
+    }, {
+        key: "currentSquare",
+        get: function get() {
+            return this._currentSquare;
+        }
+    }, {
+        key: "gameover",
+        get: function get() {
+            return this._gameOver;
         }
     }]);
 
@@ -175,123 +324,6 @@ exports.default = Game;
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var local_1 = __webpack_require__(2);
-var remote_1 = __webpack_require__(6);
-var local = new local_1.default();
-var remote = new remote_1.default();
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var game_1 = __webpack_require__(0);
-
-var Local = function Local() {
-    _classCallCheck(this, Local);
-
-    var game = new game_1.default('local');
-    game.init();
-    game.loop();
-};
-
-exports.default = Local;
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * 传入二维数组生成 div dom
- */
-
-var SquareFactory = function () {
-    function SquareFactory(matrix, $contain) {
-        _classCallCheck(this, SquareFactory);
-
-        this._matrix = matrix;
-        this._contain = $contain;
-    }
-    /**
-     * 生成方块dom
-     */
-
-
-    _createClass(SquareFactory, [{
-        key: "build",
-        value: function build() {
-            var _this = this;
-
-            this._matrix.forEach(function (row, rowIndex) {
-                var rowDiv = $('<div></div>');
-                row.forEach(function (col, colIndex) {
-                    var colDiv = $('<div></div>');
-                    colDiv.addClass('square');
-                    colDiv.css({ left: colIndex * 30 + 'px', top: rowIndex * 30 + 'px' });
-                    if (col === 0) {
-                        colDiv.addClass('none').removeClass('current').removeClass('done');
-                    } else if (col == 1) {
-                        colDiv.addClass('current').removeClass('none').removeClass('done');
-                    } else {
-                        colDiv.addClass('done').removeClass('none').removeClass('current');
-                    }
-                    rowDiv.append(colDiv);
-                });
-                _this._contain.append(rowDiv);
-            });
-        }
-        /**
-         * 刷新方块
-         */
-
-    }, {
-        key: "refresh",
-        value: function refresh(matrix) {
-            var _this2 = this;
-
-            console.log(matrix);
-            matrix.forEach(function (row, rowIndex) {
-                row.forEach(function (col, colIndex) {
-                    var div = _this2._contain.find("div:nth-child(" + (rowIndex + 1) + ")").find("div:nth-child(" + (colIndex + 1) + ")");
-                    if (col === 0) {
-                        div.addClass('none').removeClass('current').removeClass('done');
-                    } else if (col == 1) {
-                        div.addClass('current').removeClass('none').removeClass('done');
-                    } else {
-                        div.addClass('done').removeClass('none').removeClass('current');
-                    }
-                });
-            });
-        }
-    }]);
-
-    return SquareFactory;
-}();
-
-exports.SquareFactory = SquareFactory;
-exports.default = SquareFactory;
-
-/***/ }),
-/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -360,9 +392,182 @@ var MatrixToolkit = {
             return _this.makeRow(v, l1);
         });
         return arr;
+    },
+
+    /**
+     * 矩阵顺时针旋转90°解决方案
+     * @param {number[][]} matrix
+     * @returns {number[][]}
+     */
+    turnMatrix: function turnMatrix(matrix) {
+        var _matrix = {
+            matrix: this.makeMatrix(0, 4, 4),
+            w: 0,
+            h: 0
+        };
+        _matrix.matrix = _matrix.matrix.map(function (rV, rI) {
+            return rV.map(function (cV, cI) {
+                return matrix.matrix[3 - cI][rI];
+            });
+        });
+        _matrix.w = matrix.h;
+        _matrix.h = matrix.w;
+        return _matrix;
     }
 };
 exports.default = Toolkit;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var local_1 = __webpack_require__(3);
+var remote_1 = __webpack_require__(6);
+var local = new local_1.default();
+var remote = new remote_1.default();
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var game_1 = __webpack_require__(0);
+
+var Local = function () {
+    function Local() {
+        _classCallCheck(this, Local);
+
+        this._game = new game_1.default('local');
+        this._game.init();
+        this._game.loop();
+        this.bindEvent();
+    }
+    /**
+     * 绑定键盘事件
+     */
+
+
+    _createClass(Local, [{
+        key: "bindEvent",
+        value: function bindEvent() {
+            var _this = this;
+
+            document.addEventListener('keydown', function (e) {
+                if (_this._game.gameover) {
+                    return;
+                }
+                if (e.keyCode === 38) {
+                    _this._game.currentSquare.turn(_this._game);
+                } else if (e.keyCode === 37) {
+                    _this._game.currentSquare.left();
+                } else if (e.keyCode === 39) {
+                    _this._game.currentSquare.right();
+                } else if (e.keyCode === 40) {
+                    _this._game.currentSquare.down();
+                } else if (e.keyCode === 32) {
+                    _this._game.currentSquare.drop(_this._game);
+                }
+                _this._game.refreshGame();
+            });
+        }
+    }]);
+
+    return Local;
+}();
+
+exports.default = Local;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 传入二维数组生成 div dom
+ */
+
+var SquareFactory = function () {
+    function SquareFactory(matrix, $contain) {
+        _classCallCheck(this, SquareFactory);
+
+        this._matrix = matrix;
+        this._contain = $contain;
+    }
+    /**
+     * 生成方块dom
+     */
+
+
+    _createClass(SquareFactory, [{
+        key: "build",
+        value: function build() {
+            var _this = this;
+
+            this._matrix.forEach(function (row, rowIndex) {
+                var rowDiv = $('<div></div>');
+                row.forEach(function (col, colIndex) {
+                    var colDiv = $('<div></div>');
+                    colDiv.addClass('square');
+                    colDiv.css({ left: colIndex * 30 + 'px', top: rowIndex * 30 + 'px' });
+                    if (col === 0) {
+                        colDiv.addClass('none').removeClass('current').removeClass('done');
+                    } else if (col == 1) {
+                        colDiv.addClass('current').removeClass('none').removeClass('done');
+                    } else {
+                        colDiv.addClass('done').removeClass('none').removeClass('current');
+                    }
+                    rowDiv.append(colDiv);
+                });
+                _this._contain.append(rowDiv);
+            });
+        }
+        /**
+         * 刷新方块
+         */
+
+    }, {
+        key: "refresh",
+        value: function refresh(matrix) {
+            var _this2 = this;
+
+            matrix.forEach(function (row, rowIndex) {
+                row.forEach(function (col, colIndex) {
+                    var div = _this2._contain.find("div:nth-child(" + (rowIndex + 1) + ")").find("div:nth-child(" + (colIndex + 1) + ")");
+                    if (col === 0) {
+                        div.addClass('none').removeClass('current').removeClass('done');
+                    } else if (col == 1) {
+                        div.addClass('current').removeClass('none').removeClass('done');
+                    } else {
+                        div.addClass('done').removeClass('none').removeClass('current');
+                    }
+                });
+            });
+        }
+    }]);
+
+    return SquareFactory;
+}();
+
+exports.SquareFactory = SquareFactory;
+exports.default = SquareFactory;
 
 /***/ }),
 /* 5 */
@@ -376,25 +581,181 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * 当前方块解决方案
+ */
+var toolkit_1 = __webpack_require__(1);
 
 var Square = function () {
-    function Square(matrix) {
+    function Square() {
         _classCallCheck(this, Square);
 
-        this.x = 2;
-        this.y = 0;
-        this.matrix = matrix;
+        this._x = 2;
+        this._y = 0;
+        this._matrix = this.createMatrix();
+        this._nextMatrix = this.createMatrix();
     }
-    /**
-     * 下降
-     * @param {number[][]} matrix
-     */
-
 
     _createClass(Square, [{
         key: "down",
+
+        /**
+         * 下降
+         */
         value: function down() {
-            this.y++;
+            this._y++;
+        }
+        /**
+         * 旋转
+         */
+
+    }, {
+        key: "turn",
+        value: function turn(game) {
+            this._matrix = game.checkTurn();
+        }
+        /**
+         * 左移
+         */
+
+    }, {
+        key: "left",
+        value: function left() {
+            if (!this._leftWall) {
+                this._x--;
+            }
+        }
+        /**
+         * 右移
+         */
+
+    }, {
+        key: "right",
+        value: function right() {
+            if (!this._rightWall) {
+                this._x++;
+            }
+        }
+        /**
+         * 迅速落地
+         */
+
+    }, {
+        key: "drop",
+        value: function drop(game) {
+            while (game.checkDown()) {
+                this._y++;
+            }
+        }
+        /**
+         * 落地
+         */
+
+    }, {
+        key: "done",
+        value: function done() {
+            this._x = 2;
+            this._y = 0;
+            this._matrix = this._nextMatrix;
+            this._nextMatrix = this.createMatrix();
+        }
+        /**
+         * 生成七种矩阵数据
+         */
+
+    }, {
+        key: "createMatrix",
+        value: function createMatrix() {
+            var matrixes = [{
+                matrix: [[1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 4,
+                h: 1
+            }, {
+                matrix: [[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 3,
+                h: 2
+            }, {
+                matrix: [[0, 0, 1, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 3,
+                h: 2
+            }, {
+                matrix: [[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 2,
+                h: 2
+            }, {
+                matrix: [[0, 1, 1, 0], [1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 3,
+                h: 2
+            }, {
+                matrix: [[0, 1, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 3,
+                h: 2
+            }, {
+                matrix: [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                w: 3,
+                h: 2
+            }];
+            var matrix = matrixes[Math.floor(Math.random() * 7)];
+            if (Math.random() > 0.5) {
+                matrix = toolkit_1.default.matrix.turnMatrix(matrix);
+            }
+            return matrix;
+            // return matrixes[3];
+        }
+    }, {
+        key: "x",
+        get: function get() {
+            return this._x;
+        }
+    }, {
+        key: "y",
+        get: function get() {
+            return this._y;
+        }
+    }, {
+        key: "w",
+        get: function get() {
+            return this._matrix.w;
+        }
+    }, {
+        key: "h",
+        get: function get() {
+            return this._matrix.h;
+        }
+    }, {
+        key: "matrix",
+        get: function get() {
+            return this._matrix.matrix;
+        }
+    }, {
+        key: "matrixObj",
+        get: function get() {
+            return this._matrix;
+        }
+    }, {
+        key: "nextMatrix",
+        get: function get() {
+            return this._nextMatrix.matrix;
+        }
+        /**
+         * 是否可以左移状态修改接口
+         * @param {boolean} able
+         */
+
+    }, {
+        key: "leftWall",
+        set: function set(able) {
+            this._leftWall = able;
+        }
+        /**
+         * 是否可以右移状态修改接口
+         * @param {boolean} able
+         */
+
+    }, {
+        key: "rightWall",
+        set: function set(able) {
+            this._rightWall = able;
         }
     }]);
 

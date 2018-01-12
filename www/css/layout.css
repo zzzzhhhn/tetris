@@ -2,6 +2,7 @@ body {
   text-align: center;
   width: 100%;
   min-width: 1520px;
+  overflow: hidden;
 }
 body .title h1 {
   margin-bottom: 0;
@@ -49,7 +50,7 @@ body .game .contain .panel-msg .next {
   width: 120px;
   height: 120px;
   margin: 10px;
-  background: lightcoral;
+  border: 1px solid lightcoral;
   position: relative;
 }
 body .game .contain .panel-msg .msg {
@@ -74,9 +75,10 @@ body .game .contain .square {
 body .game .contain .square.none {
   color: transparent;
 }
-body .game .contain .square.current {
-  color: lightpink;
-}
 body .game .contain .square.done {
   color: darkgray;
+}
+body .game .contain .square.current {
+  color: lightpink;
+  box-shadow: inset 0 0 10px lightgrey;
 }
