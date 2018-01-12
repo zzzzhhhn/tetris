@@ -87,7 +87,7 @@ var Game = function () {
         _classCallCheck(this, Game);
 
         this._user = user;
-        this._speed = 5000;
+        this._speed = 1000;
     }
 
     _createClass(Game, [{
@@ -98,6 +98,8 @@ var Game = function () {
          */
         value: function init() {
             this._score = 0;
+            this._start = false;
+            this._gameOver = false;
             $('#score-' + this._user).text(this._score);
             this._gameMatrix = toolkit_1.default.matrix.makeMatrix(0, 10, 20);
             this._nextMatrix = toolkit_1.default.matrix.makeMatrix(1, 4, 4);
@@ -277,16 +279,64 @@ var Game = function () {
                     done_count++;
                 }
             });
-            if (score_count === 4) {
-                this._score += 80;
-            } else {
-                this._score += 10 * score_count;
+            //判断得分
+            switch (score_count) {
+                case 1:
+                    this._score += 10;
+                    break;
+                case 2:
+                    this._score += 30;
+                    break;
+                case 3:
+                    this._score += 60;
+                    break;
+                case 4:
+                    this._score += 100;
+                    break;
             }
+            if (this._score >= 2000) {
+                this._gameOver = true;
+                this.win();
+            }
+            //TODO 给对方加速
+            //判断游戏结束
             if (done_count >= 20) {
                 this._gameOver = true;
-                alert('game over');
+                this.lose();
             }
             $('#score-' + this._user).text(this._score);
+        }
+        /**
+         * 失败
+         */
+
+    }, {
+        key: "lose",
+        value: function lose() {
+            $("#lose").show();
+        }
+        /**
+         * 胜利
+         */
+
+    }, {
+        key: "win",
+        value: function win() {
+            $("#win").show();
+        }
+        /**
+         * 干扰
+         */
+
+    }, {
+        key: "disturb",
+        value: function disturb() {
+            this._gameMatrix.shift();
+            var arr = Array.from({ length: 10 }, function () {
+                return Math.random() > 0.5 ? 0 : 2;
+            });
+            this._gameMatrix.push(arr);
+            console.log(arr);
         }
         /**
          * 循环游戏
@@ -298,7 +348,7 @@ var Game = function () {
             var _this5 = this;
 
             setInterval(function () {
-                if (!_this5._gameOver) {
+                if (!_this5._gameOver && _this5._start) {
                     _this5.refreshGame();
                     _this5._currentSquare.down();
                 }
@@ -313,6 +363,11 @@ var Game = function () {
         key: "gameover",
         get: function get() {
             return this._gameOver;
+        }
+    }, {
+        key: "start",
+        set: function set(bool) {
+            this._start = bool;
         }
     }]);
 
@@ -429,6 +484,16 @@ var local_1 = __webpack_require__(3);
 var remote_1 = __webpack_require__(6);
 var local = new local_1.default();
 var remote = new remote_1.default();
+var time = 0;
+setInterval(function () {
+    time++;
+    $('#m').text(Math.floor(time / 60) < 10 ? '0' + Math.floor(time / 60) : Math.floor(time / 60));
+    $('#s').text(time % 60 < 10 ? '0' + time % 60 : time % 60);
+    // if(time % 3 === 0) {
+    //     local.game.disturb();
+    // }
+}, 1000);
+$('#prepare').show();
 
 /***/ }),
 /* 3 */
@@ -453,17 +518,17 @@ var Local = function () {
         this._game.loop();
         this.bindEvent();
     }
-    /**
-     * 绑定键盘事件
-     */
-
 
     _createClass(Local, [{
         key: "bindEvent",
+
+        /**
+         * 绑定键盘事件
+         */
         value: function bindEvent() {
             var _this = this;
 
-            document.addEventListener('keydown', function (e) {
+            $(document).on('keydown', function (e) {
                 if (_this._game.gameover) {
                     return;
                 }
@@ -480,6 +545,30 @@ var Local = function () {
                 }
                 _this._game.refreshGame();
             });
+            this.bindStart('start');
+            this.bindStart('win-again');
+            this.bindStart('lose-again');
+        }
+        /**
+         * 绑定开始游戏事件工具
+         * @param {string} id
+         */
+
+    }, {
+        key: "bindStart",
+        value: function bindStart(id) {
+            var _this2 = this;
+
+            $('#' + id).on('click', function () {
+                $('#' + id).addClass('disabled');
+                //TODO 点击准备按钮发送准备
+                _this2._game.start = true;
+            });
+        }
+    }, {
+        key: "game",
+        get: function get() {
+            return this._game;
         }
     }]);
 

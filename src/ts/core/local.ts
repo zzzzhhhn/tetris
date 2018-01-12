@@ -7,13 +7,18 @@ export default class Local {
         this._game.init();
         this._game.loop();
         this.bindEvent();
+
+    }
+
+    get game() {
+        return this._game;
     }
 
     /**
      * 绑定键盘事件
      */
     bindEvent() {
-        document.addEventListener('keydown', e => {
+        $(document).on('keydown', e => {
             if(this._game.gameover) {
                return;
             }
@@ -29,6 +34,25 @@ export default class Local {
                 this._game.currentSquare.drop(this._game);
             }
             this._game.refreshGame();
-        })
+        });
+
+        this.bindStart('start');
+        this.bindStart('win-again');
+        this.bindStart('lose-again');
+
+
     }
+
+    /**
+     * 绑定开始游戏事件工具
+     * @param {string} id
+     */
+    bindStart(id: string): void {
+        $('#' + id).on('click',() => {
+            $('#' + id).addClass('disabled');
+            //TODO 点击准备按钮发送准备
+            this._game.start = true;
+        });
+    };
 }
+

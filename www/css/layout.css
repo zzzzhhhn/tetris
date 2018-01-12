@@ -11,7 +11,7 @@ body .title h2 {
   margin-top: 0;
 }
 body .game {
-  width: 980px;
+  width: 984px;
   height: auto;
   margin: auto;
 }
@@ -24,7 +24,7 @@ body .game * {
   box-sizing: border-box;
 }
 body .game .contain {
-  width: 440px;
+  width: 442px;
   height: 680px;
   float: left;
   background: lightblue;
@@ -45,12 +45,12 @@ body .game .contain .panel-msg {
   height: 600px;
   float: left;
   background: lightgoldenrodyellow;
+  padding-top: 10px;
 }
 body .game .contain .panel-msg .next {
   width: 120px;
   height: 120px;
   margin: 10px;
-  border: 1px solid lightcoral;
   position: relative;
 }
 body .game .contain .panel-msg .msg {
@@ -81,4 +81,17 @@ body .game .contain .square.done {
 body .game .contain .square.current {
   color: lightpink;
   box-shadow: inset 0 0 10px lightgrey;
+}
+body .modal-body.win {
+  height: 450px;
+  background: url("../img/win.jpg") no-repeat;
+  background-size: cover;
+}
+body .modal-body.lose {
+  height: 450px;
+  background: url("../img/lose.jpg") no-repeat;
+  background-size: cover;
+}
+body .modal-footer {
+  text-align: center;
 }

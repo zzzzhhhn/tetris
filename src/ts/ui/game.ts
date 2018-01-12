@@ -16,10 +16,11 @@ export class Game {
     private _speed: number;  //游戏速度
     private _score: number;   //游戏分数
     private _gameOver: boolean;   //是否游戏结束
+    private _start: boolean;     //游戏是否开始
 
     constructor(user: string) {
         this._user = user;
-        this._speed = 5000;
+        this._speed = 1000;
     }
 
     get  currentSquare() {
@@ -29,11 +30,18 @@ export class Game {
     get gameover() {
         return this._gameOver;
     }
+
+    set start(bool: boolean) {
+        this._start = bool;
+    }
+
     /**
      * 初始化游戏
      */
     public init() {
         this._score = 0;
+        this._start = false;
+        this._gameOver = false;
         $('#score-' + this._user).text(this._score);
         this._gameMatrix = Toolkit.matrix.makeMatrix(0,10,20);
         this._nextMatrix = Toolkit.matrix.makeMatrix(1,4,4);
@@ -209,24 +217,67 @@ export class Game {
                 done_count++;
             }
         });
-        if(score_count === 4) {
-            this._score += 80;
-        }else {
-            this._score += 10 * score_count;
+
+        //判断得分
+        switch (score_count) {
+            case 1:
+                this._score += 10;
+                break;
+            case 2:
+                this._score += 30;
+                break;
+            case 3:
+                this._score += 60;
+                break;
+            case 4:
+                this._score += 100;
+                break;
         }
+
+        if(this._score >= 2000) {
+            this._gameOver = true;
+            this.win();
+        }
+        //TODO 给对方加速
+
+        //判断游戏结束
         if(done_count >= 20) {
             this._gameOver = true;
-            alert('game over');
+            this.lose();
         }
         $('#score-' + this._user).text(this._score);
     }
+
+    /**
+     * 失败
+     */
+    lose() {
+        $("#lose").show();
+    }
+
+    /**
+     * 胜利
+     */
+    win() {
+        $("#win").show();
+    }
+
+    /**
+     * 干扰
+     */
+    disturb() {
+        this._gameMatrix.shift();
+        const arr = Array.from({length: 10}, () => Math.random() > 0.5 ? 0 : 2);
+        this._gameMatrix.push(arr);console.log(arr)
+    }
+
 
     /**
      * 循环游戏
      */
     loop() {
         setInterval(() => {
-            if(!this._gameOver) {
+            if(!this._gameOver && this._start) {
                 this.refreshGame();
                 this._currentSquare.down();
             }

@@ -4,22 +4,24 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <link rel="stylesheet" href="./css/layout.css">
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 <body>
     <!--标题-->
     <div class="title">
         <h1>火拼俄罗斯方块</h1><br>
-        <h2>游戏时间：</h2><h2 id="time"></h2>
+        <h3>游戏时间 <span id="m">00</span>:<span id="s">00</span></h3>
     </div>
     <!--游戏区-->
     <div class="game">
         <!--我的游戏区-->
-        <div class="contain">
-            <div class="name" id="name-local">我的游戏</div>
+        <div class="contain panel panel-success">
+            <div class="name panel-heading" id="name-local">我的游戏</div>
             <!--信息区-->
             <div class="panel-msg">
-                <span class="score-label">下一个：</span>
-                <div class="next" id="next-local"></div>
+                <span class="label label-info">下一个：</span>
+                <div class="next well" id="next-local"></div>
                 <div class="msg">
                     <span class="score-label">得分：</span>
                     <span class="score-value" id="score-local"></span>
@@ -30,12 +32,12 @@
         </div>
 
         <!--对手游戏区-->
-        <div class="contain">
-            <div class="name" id="name-remote">等待对手</div>
+        <div class="contain panel panel-warning">
+            <div class="name panel-heading" id="name-remote">等待对手</div>
             <!--信息区-->
             <div class="panel-msg">
-                <span class="score-label">下一个：</span>
-                <div class="next" id="next-remote"></div>
+                <span class="label label-info">下一个：</span>
+                <div class="next well" id="next-remote"></div>
                 <div class="msg">
                     <span class="score-label">得分：</span>
                     <span class="score-value" id="score-remote"></span>
@@ -46,11 +48,54 @@
         </div>
     </div>
 
+    <!--胜利结果弹窗-->
+    <div class="modal" id="win">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body win"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="win-again">再来一局</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
+    <!--失败结果弹窗-->
+    <div class="modal" id="lose">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body lose"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="lose-again">再来一局</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
+    <!--准备弹窗-->
+    <div class="modal" id="prepare" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">规则说明</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success" role="alert">操作键： ↑旋转 ←左移 →右移 ↓加速 space 坠地 </div>
+                    <div class="alert alert-info" role="alert">得分： 一行 10分  二行 30分  三行 60分  四行 100分</div>
+                    <div class="alert alert-warning" role="alert">一方成功消掉几行，对方就会增加几行随机生成的方块</div>
+                    <div class="alert alert-danger" role="alert">胜利条件： 对方先到达顶部 或 己方先到达2000分 </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="start">准备完毕</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
-
-<script defer src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
-<script defer src="./js/main.js"></script>
+    <script defer src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script defer src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script defer src="./js/main.js"></script>
 </body>
 </html>

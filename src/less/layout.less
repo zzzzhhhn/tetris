@@ -17,7 +17,7 @@ body {
   }
 
   .game {
-    width: 980px;
+    width: 984px;
     height: auto;
     margin: auto;
 
@@ -31,7 +31,7 @@ body {
       box-sizing: border-box;
     }
     .contain {
-      width: 440px;
+      width: 442px;
       height: 680px;
       float: left;
       background: lightblue;
@@ -54,12 +54,12 @@ body {
         height: 600px;
         float: left;
         background: lightgoldenrodyellow;
+        padding-top: 10px;
 
         .next {
           width: 120px;
           height: 120px;
           margin: 10px;
-          border: 1px solid lightcoral;
           position: relative;
         }
 
@@ -100,5 +100,23 @@ body {
 
       }
     }
+  }
+  
+  .modal-body {
+    &.win {
+      height: 450px;
+      background: url("../img/win.jpg") no-repeat;
+      background-size: cover;
+    }
+    
+    &.lose {
+      height: 450px;
+      background: url("../img/lose.jpg") no-repeat;
+      background-size: cover;
+    }
+  }
+
+  .modal-footer {
+    text-align: center;
   }
 }
