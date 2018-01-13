@@ -14,6 +14,7 @@ export class SquareFactory {
      * 生成方块dom
      */
 	build(): void {
+	    this._contain.empty();
         this._matrix.forEach((row, rowIndex) => {
             const rowDiv = $('<div></div>');
             row.forEach((col, colIndex) => {

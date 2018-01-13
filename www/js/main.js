@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -75,8 +75,266 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
+
+var Toolkit = function () {
+    function Toolkit() {
+        _classCallCheck(this, Toolkit);
+    }
+
+    _createClass(Toolkit, null, [{
+        key: "matrix",
+        get: function get() {
+            return MatrixToolkit;
+        }
+    }]);
+
+    return Toolkit;
+}();
+
+exports.Toolkit = Toolkit;
+/**
+ * 生成矩阵工具类
+ * @type {{}}
+ */
+var MatrixToolkit = {
+    /**
+     * 生成一维数组工具
+     * @param {number} v  值
+     * @param {number} l  长度
+     * @returns {number[]}
+     */
+    makeRow: function makeRow() {
+        var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+        var l = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+
+        var arr = new Array(l);
+        arr.fill(v);
+        return arr;
+    },
+
+    /**
+     * 生成二位数组矩阵工具
+     * @param {number} v 值
+     * @param {number} l1 横向长度
+     * @param {number} l2 纵向长度
+     * @returns {number[][]}
+     */
+    makeMatrix: function makeMatrix() {
+        var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+
+        var _this = this;
+
+        var l1 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+        var l2 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 20;
+
+        // const arr = new Array(l2);
+        // arr.map(value => this.makeRow(v,l1));
+        var arr = Array.from({ length: l2 }, function () {
+            return _this.makeRow(v, l1);
+        });
+        return arr;
+    },
+
+    /**
+     * 矩阵顺时针旋转90°解决方案
+     * @param {number[][]} matrix
+     * @returns {number[][]}
+     */
+    turnMatrix: function turnMatrix(matrix) {
+        var _matrix = {
+            matrix: this.makeMatrix(0, 4, 4),
+            w: 0,
+            h: 0
+        };
+        _matrix.matrix = _matrix.matrix.map(function (rV, rI) {
+            return rV.map(function (cV, cI) {
+                return matrix.matrix[3 - cI][rI];
+            });
+        });
+        _matrix.w = matrix.h;
+        _matrix.h = matrix.w;
+        return _matrix;
+    }
+};
+exports.default = Toolkit;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var local_1 = __webpack_require__(2);
+var local = new local_1.default();
+var score = 0;
+var time = 0;
+setInterval(function () {
+    time += 0.1;
+    $('#m').text(Math.floor(time / 60) < 10 ? '0' + Math.floor(time / 60) : Math.floor(time / 60));
+    $('#s').text(time % 60 < 10 ? '0' + Math.floor(time % 60) : Math.floor(time % 60));
+    if (local.game.lose) {
+        local.socket.emit('lose');
+        local.game.lose = false;
+    }
+    if (local.game.win) {
+        local.socket.emit('win');
+        local.game.win = false;
+    }
+    if (!local.game.gameover) {
+        local.socket.emit('playing', { game: local.game.gameMatrix, next: local.game.nextMatrix });
+        local.socket.on('playing', function (data) {
+            local.remote.refreshGame(data.game, data.next);
+        });
+    }
+    if (score !== local.game.score) {
+        var count = (local.game.score - score) / 10;
+        local.socket.emit('disturb', { count: count });
+        score = local.game.score;
+    }
+}, 1000);
+$('#panel-name').show();
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var game_1 = __webpack_require__(3);
+
+var Local = function () {
+    function Local() {
+        var _this = this;
+
+        _classCallCheck(this, Local);
+
+        this._game = new game_1.default('local');
+        this._remote = new game_1.default('remote');
+        this.bindEvent();
+        this._socket = io('http://localhost:3000');
+        this._socket.on('start', function (data) {
+            $('#prepare').hide();
+            $('#win').hide();
+            $('#lose').hide();
+            $('#name-remote').text(data.remoteName);
+            _this._game.init();
+            _this._remote.init();
+            _this._game.loop();
+            _this._game.start = true;
+        });
+        this._socket.on('win', function () {
+            _this._game.onWin();
+        });
+        this._socket.on('lose', function () {
+            _this._game.onLose();
+        });
+        this._socket.on('disturb', function (data) {
+            _this._game.disturb(data.count);
+        });
+    }
+
+    _createClass(Local, [{
+        key: "bindEvent",
+
+        /**
+         * 绑定键盘事件
+         */
+        value: function bindEvent() {
+            var _this2 = this;
+
+            $(document).on('keydown', function (e) {
+                if (_this2._game.gameover) {
+                    return;
+                }
+                if (e.keyCode === 38) {
+                    _this2._game.currentSquare.turn(_this2._game);
+                } else if (e.keyCode === 37) {
+                    _this2._game.currentSquare.left();
+                } else if (e.keyCode === 39) {
+                    _this2._game.currentSquare.right();
+                } else if (e.keyCode === 40) {
+                    _this2._game.currentSquare.down();
+                } else if (e.keyCode === 32) {
+                    _this2._game.currentSquare.drop(_this2._game);
+                } else {
+                    return;
+                }
+                _this2._game.refreshGame();
+            });
+            this.bindStart('start');
+            this.bindStart('win-again');
+            this.bindStart('lose-again');
+            $('#btn-name').on('click', function () {
+                var name = $('#ipt-name').val();
+                if (!!name) {
+                    $('#name-local').text(name);
+                }
+                _this2._socket.emit('nickname', { name: name });
+                $('#panel-name').hide();
+                $('#prepare').show();
+            });
+        }
+        /**
+         * 绑定开始游戏事件工具
+         * @param {string} id
+         */
+
+    }, {
+        key: "bindStart",
+        value: function bindStart(id) {
+            var _this3 = this;
+
+            $('#' + id).on('click', function () {
+                $('#' + id).addClass('disabled');
+                $('#' + id).text('等待对手确认...');
+                //TODO 点击准备按钮发送准备
+                _this3._socket.emit('start', {});
+            });
+        }
+    }, {
+        key: "game",
+        get: function get() {
+            return this._game;
+        }
+    }, {
+        key: "socket",
+        get: function get() {
+            return this._socket;
+        }
+    }, {
+        key: "remote",
+        get: function get() {
+            return this._remote;
+        }
+    }]);
+
+    return Local;
+}();
+
+exports.default = Local;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
 var squareFactory_1 = __webpack_require__(4);
-var toolkit_1 = __webpack_require__(1);
+var toolkit_1 = __webpack_require__(0);
 var square_1 = __webpack_require__(5);
 /**
  * 生成游戏解决方案
@@ -104,11 +362,12 @@ var Game = function () {
             this._lose = false;
             $('#score-' + this._user).text(this._score);
             this._gameMatrix = toolkit_1.default.matrix.makeMatrix(0, 10, 20);
-            this._nextMatrix = toolkit_1.default.matrix.makeMatrix(1, 4, 4);
+            this._nextMatrix = toolkit_1.default.matrix.makeMatrix(0, 4, 4);
             this._currentSquare = new square_1.default();
             this._nextMatrix = this._currentSquare.nextMatrix;
             this.build();
             this.refreshGame();
+            this.refreshNext(this._currentSquare.nextMatrix);
         }
         /**
          * 刷新主体
@@ -120,7 +379,7 @@ var Game = function () {
             var _this = this;
 
             var gameMatrix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : toolkit_1.default.matrix.makeMatrix(0, 10, 20);
-            var nextMatrix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : toolkit_1.default.matrix.makeMatrix(1, 4, 4);
+            var nextMatrix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : toolkit_1.default.matrix.makeMatrix(0, 4, 4);
 
             if (this._user === 'local') {
                 var status = 1;
@@ -326,6 +585,7 @@ var Game = function () {
             $("#lose").show();
             this._lose = true;
             this._gameOver = true;
+            clearInterval(this._timer);
         }
         /**
          * 胜利
@@ -337,6 +597,7 @@ var Game = function () {
             $("#win").show();
             this._win = true;
             this._gameOver = true;
+            clearInterval(this._timer);
         }
         /**
          * 干扰
@@ -344,13 +605,14 @@ var Game = function () {
 
     }, {
         key: "disturb",
-        value: function disturb() {
-            this._gameMatrix.shift();
-            var arr = Array.from({ length: 10 }, function () {
-                return Math.random() > 0.5 ? 0 : 2;
-            });
-            this._gameMatrix.push(arr);
-            console.log(arr);
+        value: function disturb(count) {
+            for (var i = 0; i < count; i++) {
+                this._gameMatrix.shift();
+                var arr = Array.from({ length: 10 }, function () {
+                    return Math.random() > 0.5 ? 0 : 2;
+                });
+                this._gameMatrix.push(arr);
+            }
         }
         /**
          * 循环游戏
@@ -361,7 +623,7 @@ var Game = function () {
         value: function loop() {
             var _this5 = this;
 
-            setInterval(function () {
+            this._timer = setInterval(function () {
                 if (!_this5._gameOver && _this5._start) {
                     _this5.refreshGame();
                     _this5._currentSquare.down();
@@ -390,11 +652,17 @@ var Game = function () {
         key: "win",
         get: function get() {
             return this._win;
+        },
+        set: function set(bool) {
+            this._win = bool;
         }
     }, {
         key: "lose",
         get: function get() {
             return this._lose;
+        },
+        set: function set(bool) {
+            this._lose = bool;
         }
     }, {
         key: "gameMatrix",
@@ -406,6 +674,11 @@ var Game = function () {
         get: function get() {
             return this._nextMatrix;
         }
+    }, {
+        key: "score",
+        get: function get() {
+            return this._score;
+        }
     }]);
 
     return Game;
@@ -413,248 +686,6 @@ var Game = function () {
 
 exports.Game = Game;
 exports.default = Game;
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-Object.defineProperty(exports, "__esModule", { value: true });
-
-var Toolkit = function () {
-    function Toolkit() {
-        _classCallCheck(this, Toolkit);
-    }
-
-    _createClass(Toolkit, null, [{
-        key: "matrix",
-        get: function get() {
-            return MatrixToolkit;
-        }
-    }]);
-
-    return Toolkit;
-}();
-
-exports.Toolkit = Toolkit;
-/**
- * 生成矩阵工具类
- * @type {{}}
- */
-var MatrixToolkit = {
-    /**
-     * 生成一维数组工具
-     * @param {number} v  值
-     * @param {number} l  长度
-     * @returns {number[]}
-     */
-    makeRow: function makeRow() {
-        var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-        var l = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
-
-        var arr = new Array(l);
-        arr.fill(v);
-        return arr;
-    },
-
-    /**
-     * 生成二位数组矩阵工具
-     * @param {number} v 值
-     * @param {number} l1 横向长度
-     * @param {number} l2 纵向长度
-     * @returns {number[][]}
-     */
-    makeMatrix: function makeMatrix() {
-        var v = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-
-        var _this = this;
-
-        var l1 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
-        var l2 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 20;
-
-        // const arr = new Array(l2);
-        // arr.map(value => this.makeRow(v,l1));
-        var arr = Array.from({ length: l2 }, function () {
-            return _this.makeRow(v, l1);
-        });
-        return arr;
-    },
-
-    /**
-     * 矩阵顺时针旋转90°解决方案
-     * @param {number[][]} matrix
-     * @returns {number[][]}
-     */
-    turnMatrix: function turnMatrix(matrix) {
-        var _matrix = {
-            matrix: this.makeMatrix(0, 4, 4),
-            w: 0,
-            h: 0
-        };
-        _matrix.matrix = _matrix.matrix.map(function (rV, rI) {
-            return rV.map(function (cV, cI) {
-                return matrix.matrix[3 - cI][rI];
-            });
-        });
-        _matrix.w = matrix.h;
-        _matrix.h = matrix.w;
-        return _matrix;
-    }
-};
-exports.default = Toolkit;
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var local_1 = __webpack_require__(3);
-var remote_1 = __webpack_require__(6);
-var local = new local_1.default();
-var remote = new remote_1.default();
-var time = 0;
-setInterval(function () {
-    time += 0.1;
-    $('#m').text(Math.floor(time / 60) < 10 ? '0' + Math.floor(time / 60) : Math.floor(time / 60));
-    $('#s').text(time % 60 < 10 ? '0' + Math.floor(time % 60) : Math.floor(time % 60));
-    // if(time % 3 === 0) {
-    //     local.game.disturb();
-    // }
-    if (local.game.lose) {
-        local.socket.emit('lose');
-    }
-    if (local.game.win) {
-        local.socket.emit('win');
-    }
-    local.socket.emit('playing', { game: local.game.gameMatrix, next: local.game.nextMatrix });
-    local.socket.on('playing', function (data) {
-        remote.game.refreshGame(data.game, data.next);
-    });
-}, 1000);
-$('#panel-name').show();
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var game_1 = __webpack_require__(0);
-
-var Local = function () {
-    function Local() {
-        var _this = this;
-
-        _classCallCheck(this, Local);
-
-        this._game = new game_1.default('local');
-        this._game.init();
-        this._game.loop();
-        this.bindEvent();
-        this._socket = io('http://localhost:3000');
-        this._socket.on('start', function (data) {
-            $('#prepare').hide();
-            $('#win').hide();
-            $('#lose').hide();
-            $('#name-remote').text(data.remoteName);
-            _this._game.start = true;
-            _this._game.gameover = false;
-        });
-        this._socket.on('win', function () {
-            _this._game.onWin();
-        });
-        this._socket.on('lose', function () {
-            _this._game.onLose();
-        });
-    }
-
-    _createClass(Local, [{
-        key: "bindEvent",
-
-        /**
-         * 绑定键盘事件
-         */
-        value: function bindEvent() {
-            var _this2 = this;
-
-            $(document).on('keydown', function (e) {
-                if (_this2._game.gameover) {
-                    return;
-                }
-                if (e.keyCode === 38) {
-                    _this2._game.currentSquare.turn(_this2._game);
-                } else if (e.keyCode === 37) {
-                    _this2._game.currentSquare.left();
-                } else if (e.keyCode === 39) {
-                    _this2._game.currentSquare.right();
-                } else if (e.keyCode === 40) {
-                    _this2._game.currentSquare.down();
-                } else if (e.keyCode === 32) {
-                    _this2._game.currentSquare.drop(_this2._game);
-                }
-                _this2._game.refreshGame();
-            });
-            this.bindStart('start');
-            this.bindStart('win-again');
-            this.bindStart('lose-again');
-            $('#btn-name').on('click', function () {
-                var name = $('#ipt-name').val();
-                if (!!name) {
-                    $('#name-local').text(name);
-                }
-                _this2._socket.emit('nickname', { name: name });
-                $('#panel-name').hide();
-                $('#prepare').show();
-            });
-        }
-        /**
-         * 绑定开始游戏事件工具
-         * @param {string} id
-         */
-
-    }, {
-        key: "bindStart",
-        value: function bindStart(id) {
-            var _this3 = this;
-
-            $('#' + id).on('click', function () {
-                $('#' + id).addClass('disabled');
-                $('#' + id).text('等待对手确认...');
-                //TODO 点击准备按钮发送准备
-                _this3._socket.emit('start', {});
-            });
-        }
-    }, {
-        key: "game",
-        get: function get() {
-            return this._game;
-        }
-    }, {
-        key: "socket",
-        get: function get() {
-            return this._socket;
-        }
-    }]);
-
-    return Local;
-}();
-
-exports.default = Local;
 
 /***/ }),
 /* 4 */
@@ -689,6 +720,7 @@ var SquareFactory = function () {
         value: function build() {
             var _this = this;
 
+            this._contain.empty();
             this._matrix.forEach(function (row, rowIndex) {
                 var rowDiv = $('<div></div>');
                 row.forEach(function (col, colIndex) {
@@ -752,7 +784,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * 当前方块解决方案
  */
-var toolkit_1 = __webpack_require__(1);
+var toolkit_1 = __webpack_require__(0);
 
 var Square = function () {
     function Square() {
@@ -931,40 +963,6 @@ var Square = function () {
 }();
 
 exports.default = Square;
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var game_1 = __webpack_require__(0);
-
-var Remote = function () {
-    function Remote() {
-        _classCallCheck(this, Remote);
-
-        this._game = new game_1.default('remote');
-        this._game.init();
-    }
-
-    _createClass(Remote, [{
-        key: "game",
-        get: function get() {
-            return this._game;
-        }
-    }]);
-
-    return Remote;
-}();
-
-exports.default = Remote;
 
 /***/ })
 /******/ ]);

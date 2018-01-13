@@ -2,17 +2,18 @@ import Game from '../ui/game';
 import Socket = SocketIOClient.Socket;
 interface start {
     remoteName: string,
+    again: boolean
 }
 
 export default class Local {
 
     private _game: Game;
+    private _remote: Game;
     private _socket: Socket;
 
     constructor() {
         this._game = new Game('local');
-        this._game.init();
-        this._game.loop();
+        this._remote = new Game('remote');
         this.bindEvent();
         this._socket = io('http://localhost:3000');
         this._socket.on('start', (data: start) => {
@@ -20,8 +21,11 @@ export default class Local {
             $('#win').hide();
             $('#lose').hide();
             $('#name-remote').text(data.remoteName);
+            this._game.init();
+            this._remote.init();
+            this._game.loop();
             this._game.start = true;
-            this._game.gameover = false;
+
         });
 
         this._socket.on('win', () => {
@@ -32,6 +36,9 @@ export default class Local {
             this._game.onLose();
         });
 
+        this._socket.on('disturb', (data: any) => {
+            this._game.disturb(data.count);
+        });
 
     }
 
@@ -41,6 +48,10 @@ export default class Local {
 
     get socket() {
         return this._socket;
+    }
+
+    get remote() {
+        return this._remote;
     }
 
     /**
@@ -61,6 +72,8 @@ export default class Local {
                 this._game.currentSquare.down();
             }else if(e.keyCode === 32) {
                 this._game.currentSquare.drop(this._game);
+            }else {
+                return;
             }
             this._game.refreshGame();
         });

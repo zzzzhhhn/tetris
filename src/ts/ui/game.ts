@@ -19,6 +19,7 @@ export class Game {
     private _start: boolean;     //游戏是否开始
     private _win: boolean;
     private _lose: boolean;
+    private _timer: any;
 
     constructor(user: string) {
         this._user = user;
@@ -45,8 +46,16 @@ export class Game {
         return this._win;
     }
 
+    set win(bool: boolean) {
+        this._win = bool;
+    }
+
     get lose() {
         return this._lose;
+    }
+
+    set lose(bool: boolean) {
+        this._lose = bool;
     }
 
     get gameMatrix() {
@@ -55,6 +64,10 @@ export class Game {
 
     get nextMatrix() {
         return this._nextMatrix;
+    }
+
+    get score() {
+        return this._score;
     }
 
     /**
@@ -68,18 +81,19 @@ export class Game {
         this._lose = false;
         $('#score-' + this._user).text(this._score);
         this._gameMatrix = Toolkit.matrix.makeMatrix(0,10,20);
-        this._nextMatrix = Toolkit.matrix.makeMatrix(1,4,4);
+        this._nextMatrix = Toolkit.matrix.makeMatrix(0,4,4);
         this._currentSquare = new Square();
         this._nextMatrix = this._currentSquare.nextMatrix;
         this.build();
         this.refreshGame();
+        this.refreshNext(this._currentSquare.nextMatrix);
 
     }
 
     /**
      * 刷新主体
      */
-    public refreshGame(gameMatrix: number[][] = Toolkit.matrix.makeMatrix(0,10,20), nextMatrix: number[][] = Toolkit.matrix.makeMatrix(1,4,4)) {
+    public refreshGame(gameMatrix: number[][] = Toolkit.matrix.makeMatrix(0,10,20), nextMatrix: number[][] = Toolkit.matrix.makeMatrix(0,4,4)) {
         if(this._user === 'local') {
             let status = 1;
             let left = 3;         //方块最左侧位置
@@ -285,6 +299,7 @@ export class Game {
         $("#lose").show();
         this._lose = true;
         this._gameOver = true;
+        clearInterval(this._timer);
     }
 
     /**
@@ -294,15 +309,18 @@ export class Game {
         $("#win").show();
         this._win = true;
         this._gameOver = true;
+        clearInterval(this._timer);
     }
 
     /**
      * 干扰
      */
-    disturb() {
-        this._gameMatrix.shift();
-        const arr = Array.from({length: 10}, () => Math.random() > 0.5 ? 0 : 2);
-        this._gameMatrix.push(arr);console.log(arr)
+    disturb(count: number) {
+        for(let i = 0; i < count; i++) {
+            this._gameMatrix.shift();
+            const arr = Array.from({length: 10}, () => Math.random() > 0.5 ? 0 : 2);
+            this._gameMatrix.push(arr);
+        }
     }
 
 
@@ -310,7 +328,7 @@ export class Game {
      * 循环游戏
      */
     loop() {
-        setInterval(() => {
+        this._timer = setInterval(() => {
             if(!this._gameOver && this._start) {
                 this.refreshGame();
                 this._currentSquare.down();
