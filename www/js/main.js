@@ -219,7 +219,7 @@ var Local = function () {
         this._game = new game_1.default('local');
         this._remote = new game_1.default('remote');
         this.bindEvent();
-        this._socket = io('http://localhost:3000');
+        this._socket = io('http://192.168.50.124:3000');
         this._socket.on('start', function (data) {
             $('#prepare').hide();
             $('#win').hide();

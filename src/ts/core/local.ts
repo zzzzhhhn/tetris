@@ -15,7 +15,7 @@ export default class Local {
         this._game = new Game('local');
         this._remote = new Game('remote');
         this.bindEvent();
-        this._socket = io('http://localhost:3000');
+        this._socket = io('http://192.168.50.124:3000');
         this._socket.on('start', (data: start) => {
             $('#prepare').hide();
             $('#win').hide();
